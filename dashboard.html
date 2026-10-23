@@ -1,0 +1,1264 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>CIRCA Dashboard</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Barlow:wght@400;500;600&family=Barlow+Semi+Condensed:wght@500;600&display=swap" rel="stylesheet">
+ 
+  <style>
+    /* ---------- Colors: every color lives here, used by name everywhere else ---------- */
+    :root {
+      --bg: #000000;
+      --side: #070708;
+      --surface: #0f1012;
+      --surface-2: #1a1c20;
+      --line: #2b2f35;
+      --track: #1f2328;
+      --text: #f1f3f5;
+      --text-2: #bfc6ce;
+      --muted: #8d97a1;
+      --accent: #2dd4bf;
+      --accent-soft: rgba(45, 212, 191, 0.14);
+ 
+      /* severity levels */
+      --critical: #d03b3b;
+      --high: #ec835a;
+      --medium: #f5d04a;
+      --low: #8aa0b8;
+ 
+      /* categories */
+      --cat1: #9085e9;
+      --cat2: #9e5519;
+      --cat3: #3987e5;
+      --cat4: #d55181;
+      --cat-other: #6f8c93;
+ 
+      color-scheme: dark;
+    }
+ 
+    * { box-sizing: border-box; }
+ 
+    body {
+      margin: 0;
+      background:
+        radial-gradient(900px 500px at 85% -10%, rgba(45, 212, 191, 0.10), transparent 60%),
+        var(--bg);
+      color: var(--text);
+      font-family: "Barlow", system-ui, -apple-system, "Segoe UI", sans-serif;
+      font-size: 16px;
+      line-height: 1.5;
+    }
+ 
+    /* ---------- Page frame: sidebar + main ---------- */
+    .app { display: grid; grid-template-columns: 220px minmax(0, 1fr); min-height: 100vh; }
+ 
+    .side {
+      background: var(--side);
+      border-right: 1px solid var(--line);
+      padding: 22px 14px;
+      display: flex; flex-direction: column; gap: 22px;
+      position: sticky; top: 0; height: 100vh;
+    }
+    .brand { display: flex; align-items: center; gap: 12px; padding: 0 8px; }
+    .brand svg { width: 40px; height: 40px; flex: none; }
+    .brand b {
+      display: block; font-family: "Barlow Semi Condensed", "Barlow", system-ui, sans-serif;
+      font-weight: 600; font-size: 24px; letter-spacing: 0.08em; line-height: 1.1;
+    }
+    .brand span { color: var(--muted); font-size: 13px; }
+ 
+    .nav { display: flex; flex-direction: column; gap: 4px; }
+    .nav a {
+      display: flex; align-items: center; gap: 12px;
+      padding: 10px 12px; border-radius: 10px;
+      color: var(--text-2); text-decoration: none; font-size: 16px;
+    }
+    .nav a svg { width: 18px; height: 18px; flex: none; }
+    .nav a:hover { background: var(--surface-2); color: var(--text); }
+    .nav a.on { background: var(--accent-soft); color: var(--accent); box-shadow: inset 0 0 0 1px rgba(45, 212, 191, 0.35); }
+ 
+    .side-foot { margin-top: auto; padding: 0 8px; color: var(--muted); font-size: 14px; }
+ 
+    .main { padding: 22px 28px 56px; min-width: 0; }
+ 
+    /* ---------- Top bar ---------- */
+    .bar { display: flex; align-items: center; gap: 14px; margin-bottom: 22px; flex-wrap: wrap; }
+    .bar h1 {
+      margin: 0; font-family: "Barlow Semi Condensed", "Barlow", system-ui, sans-serif;
+      font-weight: 600; font-size: 26px;
+    }
+    .bar .sub { color: var(--muted); font-size: 14px; }
+    .bar .spacer { flex: 1; }
+    .search {
+      width: 240px; max-width: 100%;
+      background: var(--surface); color: var(--text);
+      border: 1px solid var(--line); border-radius: 10px; padding: 8px 12px; font: inherit; font-size: 15px;
+    }
+    .search::placeholder { color: var(--muted); }
+    .btn {
+      background: var(--accent-soft); color: var(--accent);
+      border: 1px solid rgba(45, 212, 191, 0.35); border-radius: 10px;
+      padding: 8px 16px; font: inherit; font-size: 15px; cursor: pointer;
+    }
+    .btn:hover { background: rgba(45, 212, 191, 0.24); }
+ 
+    /* ---------- Cards ---------- */
+    .card {
+      background: linear-gradient(180deg, var(--surface-2) -80%, var(--surface) 55%);
+      border: 1px solid var(--line);
+      border-radius: 16px;
+      padding: 20px;
+    }
+    .card h2 {
+      margin: 0 0 2px;
+      font-family: "Barlow Semi Condensed", "Barlow", system-ui, sans-serif;
+      font-weight: 600; font-size: 22px;
+    }
+    .card .hint { margin: 0 0 14px; color: var(--muted); font-size: 14px; }
+ 
+    /* ---------- Headline row ---------- */
+    .kpis { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 16px; margin-bottom: 20px; }
+    .kpi { text-align: center; padding: 18px 16px 16px; }
+    .kpi .ico {
+      width: 38px; height: 38px; border-radius: 50%; margin: 0 auto 10px;
+      display: grid; place-items: center; border: 1px solid var(--line); background: var(--bg);
+    }
+    .kpi .ico i { width: 12px; height: 12px; border-radius: 50%; display: block; }
+    .kpi .label { color: var(--text-2); font-size: 16px; }
+    .kpi .value {
+      font-family: "Barlow Semi Condensed", "Barlow", system-ui, sans-serif;
+      font-weight: 600; font-size: 44px; line-height: 1.1; margin: 2px 0 6px;
+    }
+    .kpi .note { color: var(--muted); font-size: 14px; border-top: 1px solid var(--line); padding-top: 10px; }
+    .kpi.glow { box-shadow: 0 0 0 1px rgba(45, 212, 191, 0.35), 0 12px 40px -18px rgba(45, 212, 191, 0.6); }
+ 
+    /* ---------- Trend + distribution ---------- */
+    .mid { display: grid; grid-template-columns: minmax(0, 1.5fr) minmax(0, 1fr); gap: 20px; margin-bottom: 20px; }
+ 
+    .trend-wrap { position: relative; }
+    .trend-wrap svg { width: 100%; height: auto; display: block; }
+    .trend-wrap .grid { stroke: var(--line); stroke-width: 1; }
+    .trend-wrap .tick { fill: var(--muted); font-size: 12px; font-family: inherit; }
+    .trend-wrap .line { fill: none; stroke-width: 2.5; stroke-linejoin: round; stroke-linecap: round; }
+    .trend-wrap .cursor { stroke: var(--muted); stroke-width: 1; stroke-dasharray: 3 3; }
+    .tip {
+      position: absolute; pointer-events: none; z-index: 2;
+      background: var(--bg); border: 1px solid var(--line); border-radius: 10px;
+      padding: 8px 12px; font-size: 14px; min-width: 130px;
+      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.45);
+    }
+    .tip b { display: block; margin-bottom: 4px; font-weight: 600; }
+    .tip div { display: flex; align-items: center; gap: 8px; }
+    .tip div span.v { margin-left: auto; font-variant-numeric: tabular-nums; }
+    .tip i { width: 10px; height: 10px; border-radius: 50%; display: inline-block; }
+ 
+    .key { display: flex; flex-wrap: wrap; gap: 6px 18px; margin: 12px 0 0; padding: 0; list-style: none; color: var(--text-2); font-size: 14px; }
+    .key li { display: flex; align-items: center; gap: 8px; }
+    .key i { width: 12px; height: 3px; border-radius: 2px; display: inline-block; }
+ 
+    .ring-body { display: flex; align-items: center; gap: 20px; flex-wrap: wrap; }
+    .ring-wrap { position: relative; width: 200px; height: 200px; flex: none; }
+    .ring-wrap.small { width: 130px; height: 130px; }
+    .ring-wrap svg { width: 100%; height: 100%; display: block; }
+    .ring-wrap .track { stroke: var(--track); }
+    .ring-wrap .seg { transition: stroke-dasharray 0.9s cubic-bezier(0.2, 0.7, 0.2, 1); stroke-linecap: butt; }
+    .ring-center {
+      position: absolute; inset: 0; display: flex; flex-direction: column;
+      align-items: center; justify-content: center; text-align: center; pointer-events: none;
+    }
+    .ring-center .num {
+      font-family: "Barlow Semi Condensed", "Barlow", system-ui, sans-serif;
+      font-weight: 600; font-size: 44px; line-height: 1;
+    }
+    .ring-wrap.small .ring-center .num { font-size: 30px; }
+    .ring-center .cap { margin-top: 4px; color: var(--muted); font-size: 14px; }
+ 
+    .legend { list-style: none; margin: 0; padding: 0; flex: 1; min-width: 170px; }
+    .legend .row {
+      display: grid; grid-template-columns: 12px 1fr auto 40px; align-items: center; gap: 8px;
+      width: 100%; padding: 7px 10px; background: transparent; border: 0; border-radius: 8px;
+      color: var(--text); font: inherit; text-align: left;
+    }
+    button.row { cursor: pointer; }
+    button.row:hover { background: var(--surface-2); }
+    button.row.active { background: var(--surface-2); box-shadow: inset 0 0 0 1px var(--line); }
+    .legend .swatch { width: 12px; height: 12px; border-radius: 50%; }
+    .legend .count { font-variant-numeric: tabular-nums; font-weight: 500; }
+    .legend .pct { color: var(--muted); font-size: 14px; text-align: right; font-variant-numeric: tabular-nums; }
+ 
+    /* ---------- Table + side column ---------- */
+    .work { display: grid; grid-template-columns: minmax(0, 1.8fr) minmax(300px, 1fr); gap: 20px; align-items: start; }
+    .stack { display: grid; gap: 20px; position: sticky; top: 16px; }
+ 
+    .table-card { padding: 0; overflow: hidden; }
+    .table-head { display: flex; align-items: center; gap: 12px; padding: 18px 20px 14px; flex-wrap: wrap; }
+    .table-head h2 { margin: 0; }
+    .table-head .status { color: var(--muted); font-size: 14px; }
+    .table-head .clear {
+      margin-left: auto; background: transparent; color: var(--accent);
+      border: 1px solid var(--line); border-radius: 999px; padding: 4px 14px; font: inherit; font-size: 14px; cursor: pointer;
+    }
+    .table-head .clear:hover { background: var(--surface-2); }
+ 
+    .table-wrap { max-height: 560px; overflow: auto; }
+    table { width: 100%; border-collapse: collapse; table-layout: fixed; }
+    th {
+      position: sticky; top: 0; background: var(--surface);
+      color: var(--text-2); font-weight: 500; font-size: 14px; text-align: left;
+      padding: 10px 14px; border-bottom: 1px solid var(--line);
+    }
+    td { padding: 11px 14px; border-bottom: 1px solid var(--line); font-size: 15px; }
+    td.title, td.source, td.category { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    th.c-level { width: 110px; }
+    th.c-category { width: 112px; }
+    th.c-source { width: 120px; }
+    th.c-seen { width: 112px; }
+    th.c-view { width: 70px; }
+    tbody tr { cursor: pointer; }
+    tbody tr:hover { background: var(--surface-2); }
+    tbody tr.selected { background: var(--surface-2); box-shadow: inset 3px 0 0 var(--accent); }
+    tbody tr:focus-visible { outline: 2px solid var(--accent); outline-offset: -2px; }
+    .lvl { display: inline-flex; align-items: center; gap: 8px; }
+    .lvl .dot { width: 10px; height: 10px; border-radius: 50%; flex: none; }
+    .ago { display: inline-block; background: var(--accent-soft); color: var(--accent); border-radius: 999px; padding: 1px 12px; font-size: 14px; white-space: nowrap; }
+    .viewlink { color: var(--accent); font-size: 15px; }
+    .empty { padding: 36px 20px; color: var(--text-2); text-align: center; }
+ 
+    .detail h3 { margin: 0 0 12px; font-size: 20px; line-height: 1.3; overflow-wrap: anywhere; }
+    .detail .meta { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 16px; }
+    .pill { display: inline-flex; align-items: center; gap: 8px; border: 1px solid var(--line); border-radius: 999px; padding: 3px 12px; font-size: 14px; }
+    .pill .dot { width: 10px; height: 10px; border-radius: 50%; }
+    .detail .facts { display: grid; grid-template-columns: auto 1fr; gap: 4px 16px; margin: 0 0 16px; font-size: 15px; }
+    .detail .facts dt { color: var(--muted); }
+    .detail .facts dd { margin: 0; overflow-wrap: anywhere; }
+    .detail .desc { margin: 0 0 16px; color: var(--text-2); max-height: 200px; overflow: auto; white-space: pre-wrap; overflow-wrap: anywhere; }
+    .detail h4 { margin: 0 0 6px; font-size: 15px; font-weight: 600; }
+    .detail ul { margin: 0 0 16px; padding-left: 20px; color: var(--text-2); font-size: 15px; }
+    .detail a { color: var(--accent); }
+    .detail .placeholder { color: var(--muted); margin: 0; }
+ 
+    .sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+ 
+    button:focus-visible, a:focus-visible, input:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+ 
+    /* ---------- Smaller screens ---------- */
+    @media (max-width: 1100px) {
+      .kpis { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+      .mid, .work { grid-template-columns: 1fr; }
+      .stack { position: static; }
+    }
+    @media (max-width: 860px) {
+      .app { grid-template-columns: 1fr; }
+      .side { position: static; height: auto; flex-direction: row; flex-wrap: wrap; align-items: center; padding: 14px 16px; }
+      .nav { flex-direction: row; flex-wrap: wrap; }
+      .side-foot { display: none; }
+      .main { padding: 18px 16px 40px; }
+    }
+    @media (max-width: 560px) {
+      .kpis { grid-template-columns: 1fr 1fr; gap: 12px; }
+      .kpi .value { font-size: 36px; }
+      th.c-source, td.source, th.c-category, td.category { display: none; }
+    }
+    @media (prefers-reduced-motion: reduce) {
+      .ring-wrap .seg, .trend-wrap .line { transition: none !important; }
+    }
+ 
+    /* ---------- Subscribe / unsubscribe buttons and box ---------- */
+    .side-actions { display: flex; flex-direction: column; gap: 8px; margin-top: 24px; padding: 0 8px; }
+    .side-actions button {
+      width: 100%; padding: 10px 14px; border-radius: 10px;
+      font: inherit; font-size: 15px; font-weight: 600; cursor: pointer;
+    }
+    .btn-fill { background: var(--accent); color: #000000; border: 1px solid var(--accent); }
+    .btn-line { background: transparent; color: var(--text); border: 1px solid var(--line); }
+    .btn-line:hover { background: var(--surface-2); }
+ 
+    dialog.mail {
+      padding: 0; border: 1px solid var(--line); border-radius: 12px;
+      background: var(--surface); color: var(--text);
+      width: min(420px, calc(100vw - 32px));
+    }
+    dialog.mail::backdrop { background: rgba(0, 0, 0, 0.72); }
+    .mail-box { padding: 24px; }
+    .mail-box h2 { margin: 0 0 8px; font-size: 20px; }
+    .mail-box p { margin: 0 0 18px; color: var(--text-2); font-size: 15px; line-height: 1.5; }
+    .mail-box input[type="email"] {
+      width: 100%; padding: 11px 12px; margin-bottom: 14px;
+      background: var(--bg); color: var(--text);
+      border: 1px solid var(--line); border-radius: 10px; font: inherit; font-size: 16px;
+    }
+    .mail-row { display: flex; gap: 10px; }
+    .mail-row button {
+      padding: 10px 16px; border-radius: 10px; font: inherit; font-size: 15px; font-weight: 600; cursor: pointer;
+    }
+    .mail-row .btn-fill { flex: 1; }
+    .mail-row button:disabled { opacity: 0.5; cursor: default; }
+    #mail-status { margin: 16px 0 0; min-height: 1.4em; font-size: 15px; line-height: 1.4; }
+    #mail-status.ok { color: var(--accent); }
+    #mail-status.bad { color: #f87171; }
+    @media (max-width: 860px) {
+      .side-actions { flex-direction: row; margin-top: 0; padding: 0; }
+      .side-actions button { width: auto; }
+    }
+
+    /* ---------- Ask CIRCA chat ---------- */
+    .ask-toggle {
+      position: fixed; right: 20px; bottom: 20px; z-index: 50;
+      display: inline-flex; align-items: center; gap: 8px;
+      background: var(--accent, #2dd4bf); color: #05090a;
+      border: 0; border-radius: 999px; padding: 12px 20px;
+      font: inherit; font-size: 15px; font-weight: 600; cursor: pointer;
+      box-shadow: 0 6px 24px rgba(0, 0, 0, 0.55);
+    }
+    .ask-toggle:hover { filter: brightness(1.08); }
+    .ask-toggle:focus-visible, .ask-close:focus-visible, .ask-send:focus-visible,
+    .ask-chip:focus-visible, .ask-input:focus-visible { outline: 2px solid var(--accent, #2dd4bf); outline-offset: 2px; }
+
+    .ask-panel {
+      position: fixed; right: 20px; bottom: 80px; z-index: 50;
+      width: min(380px, calc(100vw - 32px)); height: min(520px, 70vh);
+      display: flex; flex-direction: column;
+      background: var(--surface, #0f1012); color: var(--text, #f1f3f5);
+      border: 1px solid var(--line, #2b2f35); border-radius: 14px;
+      box-shadow: 0 16px 48px rgba(0, 0, 0, 0.7); overflow: hidden;
+    }
+    .ask-panel[hidden] { display: none; }
+
+    .ask-head {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 12px 14px; border-bottom: 1px solid var(--line, #2b2f35);
+      font-weight: 600;
+    }
+    .ask-close {
+      background: transparent; color: var(--muted, #8d97a1); border: 0;
+      font-size: 22px; line-height: 1; cursor: pointer; border-radius: 6px; padding: 2px 8px;
+    }
+    .ask-close:hover { color: var(--text, #f1f3f5); }
+
+    .ask-log { flex: 1; overflow-y: auto; padding: 14px; display: flex; flex-direction: column; gap: 10px; }
+    .ask-msg {
+      max-width: 88%; padding: 9px 12px; border-radius: 12px; font-size: 14px; line-height: 1.45;
+      white-space: pre-wrap; overflow-wrap: anywhere;
+    }
+    .ask-msg.bot { align-self: flex-start; background: var(--surface-2, #1a1c20); color: var(--text, #f1f3f5); border: 1px solid var(--line, #2b2f35); }
+    .ask-msg.me { align-self: flex-end; background: var(--accent, #2dd4bf); color: #05090a; }
+    .ask-msg.pending { color: var(--muted, #8d97a1); font-style: italic; }
+
+    .ask-chips { display: flex; flex-direction: column; gap: 6px; padding: 0 14px 10px; }
+    .ask-chips[hidden] { display: none; }
+    .ask-chip {
+      text-align: left; background: transparent; color: var(--text-2, #bfc6ce);
+      border: 1px solid var(--line, #2b2f35); border-radius: 10px; padding: 8px 10px;
+      font: inherit; font-size: 13px; cursor: pointer;
+    }
+    .ask-chip:hover { background: var(--surface-2, #1a1c20); color: var(--text, #f1f3f5); }
+
+    .ask-form { display: flex; gap: 8px; padding: 12px; border-top: 1px solid var(--line, #2b2f35); }
+    .ask-input {
+      flex: 1; min-width: 0; background: var(--bg, #000); color: var(--text, #f1f3f5);
+      border: 1px solid var(--line, #2b2f35); border-radius: 10px; padding: 9px 12px; font: inherit; font-size: 14px;
+    }
+    .ask-input::placeholder { color: var(--muted, #8d97a1); }
+    .ask-send {
+      background: var(--accent, #2dd4bf); color: #05090a; border: 0; border-radius: 10px;
+      padding: 9px 16px; font: inherit; font-weight: 600; cursor: pointer;
+    }
+    .ask-send:disabled, .ask-input:disabled { opacity: 0.5; cursor: not-allowed; }
+
+    @media (max-width: 480px) {
+      .ask-panel { right: 16px; bottom: 76px; }
+      .ask-toggle { right: 16px; bottom: 16px; }
+    }
+  </style>
+</head>
+ 
+<body>
+  <div class="app">
+ 
+    <!-- ===== Sidebar ===== -->
+    <aside class="side">
+      <div class="brand">
+        <svg viewBox="0 0 48 48" role="img" aria-label="CIRCA emblem">
+          <circle cx="24" cy="24" r="21" fill="none" stroke="#1f4650" stroke-width="1.5"></circle>
+          <path d="M 40.38 12.53 A 20 20 0 1 0 40.38 35.47" fill="none" stroke="#2dd4bf" stroke-width="4" stroke-linecap="round"></path>
+          <circle cx="24" cy="24" r="4.5" fill="#2dd4bf"></circle>
+        </svg>
+        <div><b>CIRCA</b><span>Threat intelligence</span></div>
+      </div>
+ 
+      <nav class="nav">
+        <a href="#top" class="on">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="9" rx="1.5"/><rect x="14" y="3" width="7" height="5" rx="1.5"/><rect x="14" y="12" width="7" height="9" rx="1.5"/><rect x="3" y="16" width="7" height="5" rx="1.5"/></svg>
+          Dashboard
+        </a>
+        <a href="#trend">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 17 9 11 13 15 21 7"/><polyline points="15 7 21 7 21 13"/></svg>
+          Trends
+        </a>
+        <a href="#incidents">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3 2.5 20h19L12 3z"/><line x1="12" y1="10" x2="12" y2="14"/><circle cx="12" cy="17" r="0.6"/></svg>
+          Incidents
+        </a>
+        <a href="#categories">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 3v9l6.4 6.4"/></svg>
+          Categories
+        </a>
+      </nav>
+            <div class="side-actions">
+        <button type="button" class="btn-fill" id="open-subscribe">Subscribe</button>
+        <button type="button" class="btn-line" id="open-unsubscribe">Unsubscribe</button>
+      </div>
+      
+ 
+      <div class="side-foot" id="loaded"></div>
+    </aside>
+ 
+    <!-- ===== Main ===== -->
+    <main class="main" id="top">
+ 
+      <div class="bar">
+        <div>
+          <h1>Threat overview</h1>
+          <div class="sub">Cyber Incident Report and Collection Assistant</div>
+        </div>
+        <div class="spacer"></div>
+        <input class="search" id="search" type="search" placeholder="Search titles" aria-label="Search incident titles">
+        <button class="btn" id="refresh" type="button">Refresh data</button>
+      </div>
+ 
+      <!-- Headline row -->
+      <section class="kpis">
+        <div class="card kpi">
+          <div class="ico"><i style="background: var(--critical)"></i></div>
+          <div class="label">Critical</div>
+          <div class="value" id="k-critical">0</div>
+          <div class="note" id="k-critical-note">of 0 incidents</div>
+        </div>
+        <div class="card kpi">
+          <div class="ico"><i style="background: var(--high)"></i></div>
+          <div class="label">High</div>
+          <div class="value" id="k-high">0</div>
+          <div class="note" id="k-high-note">of 0 incidents</div>
+        </div>
+        <div class="card kpi glow">
+          <div class="ico"><i style="background: var(--accent)"></i></div>
+          <div class="label">New in last 24 hours</div>
+          <div class="value" id="k-new">0</div>
+          <div class="note">Added since yesterday</div>
+        </div>
+        <div class="card kpi">
+          <div class="ico"><i style="background: var(--cat3)"></i></div>
+          <div class="label">Sources reporting</div>
+          <div class="value" id="k-sources">0</div>
+          <div class="note">Feeds with incidents on file</div>
+        </div>
+      </section>
+ 
+      <!-- Trend + distribution -->
+      <section class="mid">
+        <div class="card" id="trend">
+          <h2>Threat trend by level</h2>
+          <p class="hint">New incidents per day, last 7 days.</p>
+          <div class="trend-wrap" id="trend-wrap">
+            <svg id="trend-svg" viewBox="0 0 640 250" role="img" aria-label="Line chart of new incidents per day by level, last 7 days"></svg>
+            <div class="tip" id="tip" hidden></div>
+          </div>
+          <ul class="key" id="trend-key"></ul>
+          <table class="sr-only" id="trend-table"></table>
+        </div>
+ 
+        <div class="card">
+          <h2>Level distribution</h2>
+          <p class="hint">Select a level to filter the table.</p>
+          <div class="ring-body">
+            <div class="ring-wrap">
+              <svg id="ring-levels" viewBox="0 0 200 200" role="img" aria-label="Incidents by level"></svg>
+              <div class="ring-center"><span class="num" id="level-total">0</span><span class="cap">incidents</span></div>
+            </div>
+            <ul class="legend" id="legend-levels"></ul>
+          </div>
+        </div>
+      </section>
+ 
+      <!-- Table + side column -->
+      <section class="work">
+        <div class="card table-card" id="incidents">
+          <div class="table-head">
+            <h2>Incidents</h2>
+            <span class="status" id="table-status"></span>
+            <button class="clear" id="clear-filter" type="button" hidden>Show all levels</button>
+          </div>
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th class="c-level">Level</th>
+                  <th>Title</th>
+                  <th class="c-category">Category</th>
+                  <th class="c-source">Source</th>
+                  <th class="c-seen">Detected</th>
+                  <th class="c-view">Action</th>
+                </tr>
+              </thead>
+              <tbody id="incident-rows"></tbody>
+            </table>
+            <div class="empty" id="table-empty" hidden></div>
+          </div>
+        </div>
+ 
+        <div class="stack">
+          <div class="card" id="categories">
+            <h2>By category</h2>
+            <p class="hint">What kind of threat it is.</p>
+            <div class="ring-body">
+              <div class="ring-wrap small">
+                <svg id="ring-cats" viewBox="0 0 200 200" role="img" aria-label="Incidents by category"></svg>
+                <div class="ring-center"><span class="num" id="cat-total">0</span><span class="cap">total</span></div>
+              </div>
+              <ul class="legend" id="legend-cats"></ul>
+            </div>
+          </div>
+ 
+          <aside class="card detail" id="detail" aria-live="polite">
+            <p class="placeholder">Select an incident to read its details.</p>
+          </aside>
+        </div>
+      </section>
+    </main>
+  </div>
+ 
+  <script>
+    // ===== Constants =====
+    const LEVELS = ["Critical", "High", "Medium", "Low"];
+    const LEVEL_COLOR = {
+      Critical: "var(--critical)",
+      High: "var(--high)",
+      Medium: "var(--medium)",
+      Low: "var(--low)"
+    };
+    const CAT_COLORS = ["var(--cat1)", "var(--cat2)", "var(--cat3)", "var(--cat4)"];
+ 
+    // ===== State (what the page currently remembers) =====
+    let currentLevel = "";      // "" means all levels
+    let selectedRow = null;     // the table row the user clicked
+    let allIncidents = [];      // rows from the last fetch (the search box filters these)
+ 
+    // ===== Small helpers =====
+    function svgEl(tag, attrs) {
+      const node = document.createElementNS("http://www.w3.org/2000/svg", tag);
+      for (const key in attrs) { node.setAttribute(key, attrs[key]); }
+      return node;
+    }
+ 
+    function el(tag, className, text) {
+      const node = document.createElement(tag);
+      if (className) { node.className = className; }
+      if (text !== undefined && text !== null) { node.textContent = text; }
+      return node;
+    }
+ 
+    // Only allow real web links. A feed could send "javascript:..." as a link.
+    function safeUrl(url) {
+      if (typeof url === "string" && (url.startsWith("https://") || url.startsWith("http://"))) { return url; }
+      return null;
+    }
+ 
+    function fmtDate(value) {
+      if (!value) { return "unknown"; }
+      const d = new Date(value);
+      if (isNaN(d)) { return String(value); }
+      return d.toLocaleDateString(undefined, { year: "numeric", month: "short", day: "numeric" });
+    }
+ 
+    // "5 min ago", "3 hrs ago", "2 days ago"
+    function timeAgo(value) {
+      if (!value) { return "unknown"; }
+      const then = new Date(value);
+      if (isNaN(then)) { return "unknown"; }
+      const minutes = Math.max(0, Math.round((Date.now() - then.getTime()) / 60000));
+      if (minutes < 1) { return "just now"; }
+      if (minutes < 60) { return minutes + " min ago"; }
+      const hours = Math.round(minutes / 60);
+      if (hours < 24) { return hours + (hours === 1 ? " hr ago" : " hrs ago"); }
+      const days = Math.round(hours / 24);
+      return days + (days === 1 ? " day ago" : " days ago");
+    }
+ 
+    // "2026-10-12" for a Date, using the browser's local day
+    function dayKey(d) {
+      const m = String(d.getMonth() + 1).padStart(2, "0");
+      const day = String(d.getDate()).padStart(2, "0");
+      return d.getFullYear() + "-" + m + "-" + day;
+    }
+ 
+    // ===== Donut ring =====
+    // entries = [{ value: 5, color: "var(--critical)" }, ...]
+    function drawRing(svg, entries) {
+      svg.innerHTML = "";
+ 
+      const r = 80;
+      const width = 22;
+      const circumference = 2 * Math.PI * r;
+      const gap = 3;
+ 
+      svg.appendChild(svgEl("circle", { cx: 100, cy: 100, r: r, fill: "none", "stroke-width": width, class: "track" }));
+ 
+      let total = 0;
+      entries.forEach(function (entry) { total += entry.value; });
+      if (total === 0) { return; }
+ 
+      let used = 0;
+      entries.forEach(function (entry, i) {
+        if (entry.value === 0) { return; }
+ 
+        const length = (entry.value / total) * circumference;
+        const arc = svgEl("circle", {
+          cx: 100, cy: 100, r: r, fill: "none", "stroke-width": width,
+          transform: "rotate(-90 100 100)", class: "seg"
+        });
+        arc.style.stroke = entry.color;
+        arc.style.strokeDashoffset = -used;
+        arc.style.strokeDasharray = "0 " + circumference;
+        arc.style.transitionDelay = (i * 120) + "ms";
+        svg.appendChild(arc);
+ 
+        const visible = Math.max(length - gap, 0.5);
+        requestAnimationFrame(function () {
+          requestAnimationFrame(function () {
+            arc.style.strokeDasharray = visible + " " + circumference;
+          });
+        });
+ 
+        used += length;
+      });
+    }
+ 
+    function legendRow(parent, label, count, total, color, asButton) {
+      const li = el("li");
+      const row = el(asButton ? "button" : "div", "row");
+      if (asButton) { row.type = "button"; }
+ 
+      const swatch = el("span", "swatch");
+      swatch.style.background = color;
+      row.appendChild(swatch);
+      row.appendChild(el("span", "name", label));
+      row.appendChild(el("span", "count", count));
+      const pct = total > 0 ? Math.round((count / total) * 100) : 0;
+      row.appendChild(el("span", "pct", pct + "%"));
+ 
+      li.appendChild(row);
+      parent.appendChild(li);
+      return row;
+    }
+ 
+    // ===== Headline cards + level ring =====
+    async function loadStats() {
+      const stats = await (await fetch("/stats")).json();
+ 
+      let total = 0;
+      LEVELS.forEach(function (level) { total += stats[level]; });
+ 
+      document.getElementById("k-critical").textContent = stats.Critical;
+      document.getElementById("k-critical-note").textContent = "of " + total + " incidents";
+      document.getElementById("k-high").textContent = stats.High;
+      document.getElementById("k-high-note").textContent = "of " + total + " incidents";
+      document.getElementById("level-total").textContent = total;
+ 
+      const entries = [];
+      LEVELS.forEach(function (level) {
+        entries.push({ value: stats[level], color: LEVEL_COLOR[level] });
+      });
+      drawRing(document.getElementById("ring-levels"), entries);
+ 
+      const legend = document.getElementById("legend-levels");
+      legend.innerHTML = "";
+      LEVELS.forEach(function (level) {
+        const row = legendRow(legend, level, stats[level], total, LEVEL_COLOR[level], true);
+        row.dataset.level = level;
+        row.onclick = function () {
+          setFilter(currentLevel === level ? "" : level);   // click again to clear
+        };
+      });
+      markActiveLevel();
+    }
+ 
+    async function loadSummary() {
+      const s = await (await fetch("/stats/summary")).json();   // {new_24h: 4, sources: 6}
+      document.getElementById("k-new").textContent = s.new_24h;
+      document.getElementById("k-sources").textContent = s.sources;
+    }
+ 
+    // ===== Category ring =====
+    async function loadCategories() {
+      const list = await (await fetch("/stats/categories")).json();   // [{category, count}, ...]
+ 
+      let total = 0;
+      list.forEach(function (item) { total += item.count; });
+      document.getElementById("cat-total").textContent = total;
+ 
+      // Top 4 named categories get a color. "other" and everything past 4 share one gray slice.
+      const entries = [];
+      const shown = [];
+      let rest = 0;
+      let named = 0;
+      list.forEach(function (item) {
+        if (item.category === "other") {
+          rest += item.count;
+        } else if (named < 4) {
+          shown.push({ label: item.category, count: item.count, color: CAT_COLORS[named] });
+          named += 1;
+        } else {
+          rest += item.count;
+        }
+      });
+      if (rest > 0) {
+        shown.push({ label: "other", count: rest, color: "var(--cat-other)" });
+      }
+ 
+      const legend = document.getElementById("legend-cats");
+      legend.innerHTML = "";
+      shown.forEach(function (item) {
+        entries.push({ value: item.count, color: item.color });
+        legendRow(legend, item.label, item.count, total, item.color, false);
+      });
+      drawRing(document.getElementById("ring-cats"), entries);
+    }
+ 
+    // ===== Trend line chart =====
+    async function loadTrend() {
+      const rows = await (await fetch("/stats/trend")).json();   // [{day, priority_level, count}, ...]
+ 
+      // The last 7 days, oldest first
+      const days = [];
+      for (let i = 6; i >= 0; i--) {
+        const d = new Date();
+        d.setDate(d.getDate() - i);
+        days.push({ key: dayKey(d), date: d });
+      }
+ 
+      // counts[level][dayKey] = number
+      const counts = {};
+      LEVELS.forEach(function (level) { counts[level] = {}; });
+      rows.forEach(function (r) {
+        const key = String(r.day).slice(0, 10);
+        if (counts[r.priority_level]) { counts[r.priority_level][key] = r.count; }
+      });
+ 
+      // One array of 7 numbers per level
+      const series = {};
+      let top = 0;
+      LEVELS.forEach(function (level) {
+        series[level] = days.map(function (d) {
+          const n = counts[level][d.key] || 0;
+          if (n > top) { top = n; }
+          return n;
+        });
+      });
+ 
+      // Round the top of the scale up to a tidy number
+      const step = top <= 4 ? 1 : Math.ceil(top / 4);
+      const maxY = Math.max(step * 4, 4);
+ 
+      // Chart area inside the 640 x 250 canvas
+      const L = 34, R = 26, T = 12, B = 28;
+      const W = 640, H = 250;
+      const plotW = W - L - R;
+      const plotH = H - T - B;
+      function xOf(i) { return L + (plotW * i) / 6; }
+      function yOf(v) { return T + plotH - (v / maxY) * plotH; }
+ 
+      const svg = document.getElementById("trend-svg");
+      svg.innerHTML = "";
+ 
+      // Gridlines and y labels
+      for (let g = 0; g <= 4; g++) {
+        const value = step * g;
+        const y = yOf(value);
+        svg.appendChild(svgEl("line", { x1: L, x2: W - R, y1: y, y2: y, class: "grid" }));
+        const label = svgEl("text", { x: L - 8, y: y + 4, "text-anchor": "end", class: "tick" });
+        label.textContent = value;
+        svg.appendChild(label);
+      }
+      // x labels
+      days.forEach(function (d, i) {
+        const label = svgEl("text", { x: xOf(i), y: H - 8, "text-anchor": "middle", class: "tick" });
+        label.textContent = d.date.toLocaleDateString(undefined, { weekday: "short", day: "numeric" });
+        svg.appendChild(label);
+      });
+ 
+      // One line per level
+      LEVELS.forEach(function (level, li) {
+        let path = "";
+        series[level].forEach(function (v, i) {
+          path += (i === 0 ? "M" : "L") + xOf(i).toFixed(1) + " " + yOf(v).toFixed(1) + " ";
+        });
+        const line = svgEl("path", { d: path.trim(), class: "line" });
+        line.style.stroke = LEVEL_COLOR[level];
+        svg.appendChild(line);
+ 
+        // draw-in motion: the line starts hidden and slides into view
+        const length = line.getTotalLength ? line.getTotalLength() : 0;
+        if (length > 0) {
+          line.style.strokeDasharray = length;
+          line.style.strokeDashoffset = length;
+          line.style.transition = "stroke-dashoffset 1s ease " + (li * 120) + "ms";
+          requestAnimationFrame(function () {
+            requestAnimationFrame(function () { line.style.strokeDashoffset = 0; });
+          });
+        }
+      });
+ 
+      // Legend under the chart, with a 7-day total per level
+      const key = document.getElementById("trend-key");
+      key.innerHTML = "";
+      LEVELS.forEach(function (level) {
+        const sum = series[level].reduce(function (a, b) { return a + b; }, 0);
+        const li = el("li");
+        const swatch = el("i");
+        swatch.style.background = LEVEL_COLOR[level];
+        li.appendChild(swatch);
+        li.appendChild(el("span", "", level + " " + sum));
+        key.appendChild(li);
+      });
+ 
+      // Hidden table for screen readers
+      const table = document.getElementById("trend-table");
+      table.innerHTML = "";
+      const head = el("tr");
+      head.appendChild(el("th", "", "Day"));
+      LEVELS.forEach(function (level) { head.appendChild(el("th", "", level)); });
+      table.appendChild(head);
+      days.forEach(function (d, i) {
+        const tr = el("tr");
+        tr.appendChild(el("td", "", d.key));
+        LEVELS.forEach(function (level) { tr.appendChild(el("td", "", series[level][i])); });
+        table.appendChild(tr);
+      });
+ 
+      // Hover: a dashed line, four dots, and a small tooltip for the nearest day
+      const cursor = svgEl("line", { y1: T, y2: T + plotH, class: "cursor" });
+      cursor.setAttribute("visibility", "hidden");
+      svg.appendChild(cursor);
+      const dots = {};
+      LEVELS.forEach(function (level) {
+        const dot = svgEl("circle", { r: 4.5, stroke: "#0d2227", "stroke-width": 2 });
+        dot.style.fill = LEVEL_COLOR[level];
+        dot.setAttribute("visibility", "hidden");
+        svg.appendChild(dot);
+        dots[level] = dot;
+      });
+ 
+      const tip = document.getElementById("tip");
+      const wrap = document.getElementById("trend-wrap");
+ 
+      function hideHover() {
+        cursor.setAttribute("visibility", "hidden");
+        LEVELS.forEach(function (level) { dots[level].setAttribute("visibility", "hidden"); });
+        tip.hidden = true;
+      }
+ 
+      svg.onmousemove = function (event) {
+        const box = svg.getBoundingClientRect();
+        const scale = W / box.width;                       // screen pixels -> canvas units
+        const xCanvas = (event.clientX - box.left) * scale;
+        let i = Math.round(((xCanvas - L) / plotW) * 6);
+        i = Math.min(6, Math.max(0, i));
+ 
+        cursor.setAttribute("x1", xOf(i));
+        cursor.setAttribute("x2", xOf(i));
+        cursor.setAttribute("visibility", "visible");
+ 
+        tip.innerHTML = "";
+        tip.appendChild(el("b", "", days[i].date.toLocaleDateString(undefined, { weekday: "long", month: "short", day: "numeric" })));
+        LEVELS.forEach(function (level) {
+          const v = series[level][i];
+          dots[level].setAttribute("cx", xOf(i));
+          dots[level].setAttribute("cy", yOf(v));
+          dots[level].setAttribute("visibility", "visible");
+ 
+          const row = el("div");
+          const sw = el("i");
+          sw.style.background = LEVEL_COLOR[level];
+          row.appendChild(sw);
+          row.appendChild(el("span", "", level));
+          row.appendChild(el("span", "v", v));
+          tip.appendChild(row);
+        });
+        tip.hidden = false;
+ 
+        // Put the tooltip beside the cursor, flipping sides near the right edge
+        const px = xOf(i) / scale;
+        const flip = px > box.width * 0.6;
+        tip.style.left = flip ? "auto" : (px + 14) + "px";
+        tip.style.right = flip ? (box.width - px + 14) + "px" : "auto";
+        tip.style.top = "8px";
+      };
+      svg.onmouseleave = hideHover;
+    }
+ 
+    // ===== Filter =====
+    function markActiveLevel() {
+      document.querySelectorAll("#legend-levels .row").forEach(function (row) {
+        row.classList.toggle("active", row.dataset.level === currentLevel);
+      });
+    }
+ 
+    function setFilter(level) {
+      currentLevel = level;
+      markActiveLevel();
+      document.getElementById("clear-filter").hidden = (level === "");
+      loadIncidents();
+    }
+    document.getElementById("clear-filter").onclick = function () { setFilter(""); };
+    document.getElementById("search").oninput = renderTable;
+ 
+    // ===== Incident table =====
+    async function loadIncidents() {
+      let url = "/incidents?limit=100";
+      if (currentLevel) { url += "&level=" + encodeURIComponent(currentLevel); }
+      const response = await fetch(url);
+      allIncidents = await response.json();
+      renderTable();
+    }
+ 
+    // Draws the rows from allIncidents, narrowed by the search box
+    function renderTable() {
+      const text = document.getElementById("search").value.trim().toLowerCase();
+      const incidents = allIncidents.filter(function (item) {
+        return text === "" || String(item.title).toLowerCase().includes(text);
+      });
+ 
+      const tbody = document.getElementById("incident-rows");
+      const empty = document.getElementById("table-empty");
+      tbody.innerHTML = "";
+      selectedRow = null;
+ 
+      let label = currentLevel ? currentLevel + " only" : "all levels";
+      if (text) { label += ", matching \"" + text + "\""; }
+      document.getElementById("table-status").textContent = incidents.length + " shown, " + label;
+ 
+      if (incidents.length === 0) {
+        empty.hidden = false;
+        empty.textContent = text
+          ? "No titles match your search. Clear the search box to see everything."
+          : "No incidents match this filter. Choose another level, or show all levels.";
+        return;
+      }
+      empty.hidden = true;
+ 
+      incidents.forEach(function (item) {
+        const row = document.createElement("tr");
+        row.tabIndex = 0;
+ 
+        // Level: colored dot plus the word (color is never the only clue)
+        const levelCell = el("td");
+        const lvl = el("span", "lvl");
+        const dot = el("span", "dot");
+        dot.style.background = LEVEL_COLOR[item.priority_level] || "var(--low)";
+        lvl.appendChild(dot);
+        lvl.appendChild(el("span", "", item.priority_level));
+        levelCell.appendChild(lvl);
+        row.appendChild(levelCell);
+ 
+        const titleCell = el("td", "title", item.title);
+        titleCell.title = item.title;
+        row.appendChild(titleCell);
+        row.appendChild(el("td", "category", item.category));
+        row.appendChild(el("td", "source", item.source));
+ 
+        const seenCell = el("td");
+        seenCell.appendChild(el("span", "ago", timeAgo(item.created_at)));
+        row.appendChild(seenCell);
+ 
+        const viewCell = el("td");
+        viewCell.appendChild(el("span", "viewlink", "View"));
+        row.appendChild(viewCell);
+ 
+        row.onclick = function () { selectRow(row, item.id); };
+        row.onkeydown = function (event) {
+          if (event.key === "Enter") { selectRow(row, item.id); }
+        };
+        tbody.appendChild(row);
+      });
+    }
+ 
+    function selectRow(row, id) {
+      if (selectedRow) { selectedRow.classList.remove("selected"); }
+      row.classList.add("selected");
+      selectedRow = row;
+      showDetail(id);
+    }
+ 
+    // ===== Detail panel =====
+    async function showDetail(id) {
+      const response = await fetch("/incidents/" + id);
+      const incident = await response.json();
+ 
+      const box = document.getElementById("detail");
+      box.innerHTML = "";
+ 
+      box.appendChild(el("h3", "", incident.title));
+ 
+      const meta = el("div", "meta");
+      const levelPill = el("span", "pill");
+      const dot = el("span", "dot");
+      dot.style.background = LEVEL_COLOR[incident.priority_level] || "var(--low)";
+      levelPill.appendChild(dot);
+      levelPill.appendChild(el("span", "", incident.priority_level));
+      meta.appendChild(levelPill);
+      if (incident.cvss_score !== null && incident.cvss_score !== undefined) {
+        meta.appendChild(el("span", "pill", "CVSS " + incident.cvss_score));
+      }
+      box.appendChild(meta);
+ 
+      const facts = el("dl", "facts");
+      function fact(name, value) {
+        facts.appendChild(el("dt", "", name));
+        facts.appendChild(el("dd", "", value));
+      }
+      fact("Source", incident.source);
+      fact("Category", incident.category || "other");
+      fact("Published", fmtDate(incident.published));
+      fact("First seen", fmtDate(incident.created_at));
+      box.appendChild(facts);
+ 
+      // Description as plain text, never as HTML
+      box.appendChild(el("p", "desc", incident.description || "No description."));
+ 
+      const products = incident.affected_products || [];
+      if (products.length > 0) {
+        box.appendChild(el("h4", "", "Affected products"));
+        const ul = el("ul");
+        products.slice(0, 8).forEach(function (p) {
+          let text = (p.vendor || "") + " " + (p.product || "");
+          if (p.version) { text += " " + p.version; }
+          ul.appendChild(el("li", "", text.trim()));
+        });
+        if (products.length > 8) {
+          ul.appendChild(el("li", "", "and " + (products.length - 8) + " more"));
+        }
+        box.appendChild(ul);
+      }
+ 
+      const href = safeUrl(incident.url);
+      if (href) {
+        const a = el("a", "", "Open the source page");
+        a.href = href;
+        a.target = "_blank";
+        a.rel = "noopener noreferrer";
+        box.appendChild(a);
+      }
+    }
+ 
+    // ===== Start =====
+    function fail(id, message) {
+      const target = document.getElementById(id);
+      if (target) { target.hidden = false; target.textContent = message; }
+    }
+ 
+    function loadAll() {
+      loadStats().catch(function () { fail("legend-levels", "Could not load the level counts. Check that the API is running."); });
+      loadSummary().catch(function () { /* the two cards stay at 0 */ });
+      loadCategories().catch(function () { fail("legend-cats", "Could not load the categories."); });
+      loadTrend().catch(function () { document.getElementById("trend-key").textContent = "Could not load the trend."; });
+      loadIncidents().catch(function () { fail("table-empty", "Could not load incidents. Check that the API is running."); });
+      document.getElementById("loaded").textContent = "Updated " + new Date().toLocaleTimeString();
+    }
+ 
+    document.getElementById("refresh").onclick = loadAll;
+    loadAll();
+  </script>
+    <dialog class="mail" id="mail-dialog" aria-labelledby="mail-title">
+    <div class="mail-box">
+      <h2 id="mail-title"></h2>
+      <p id="mail-intro"></p>
+      <form id="mail-form">
+        <label class="sr-only" for="mail-email">Email address</label>
+        <input type="email" id="mail-email" name="email" placeholder="you@example.com" autocomplete="email" required>
+        <div class="mail-row">
+          <button type="submit" class="btn-fill" id="mail-submit"></button>
+          <button type="button" class="btn-line" id="mail-close">Close</button>
+        </div>
+      </form>
+      <div id="mail-status" role="status" aria-live="polite"></div>
+    </div>
+  </dialog>
+ 
+  <script>
+    (function () {
+      const dialog = document.getElementById("mail-dialog");
+      const title = document.getElementById("mail-title");
+      const intro = document.getElementById("mail-intro");
+      const form = document.getElementById("mail-form");
+      const input = document.getElementById("mail-email");
+      const submit = document.getElementById("mail-submit");
+      const status = document.getElementById("mail-status");
+ 
+      const MODES = {
+        subscribe: {
+          title: "Subscribe to CIRCA reports",
+          intro: "Enter your email address. We will send you a message to confirm it before any report is sent.",
+          button: "Subscribe",
+          url: "/subscribe"
+        },
+        unsubscribe: {
+          title: "Unsubscribe from CIRCA reports",
+          intro: "Enter the address that receives the reports. If it is subscribed, we will email you a link to unsubscribe.",
+          button: "Send unsubscribe link",
+          url: "/unsubscribe-request"
+        }
+      };
+      let mode = MODES.subscribe;
+ 
+      function setStatus(text, kind) {
+        status.textContent = text;
+        status.className = kind;
+      }
+ 
+      function openDialog(which) {
+        mode = MODES[which];
+        title.textContent = mode.title;
+        intro.textContent = mode.intro;
+        submit.textContent = mode.button;
+        input.value = "";
+        setStatus("", "");
+        submit.disabled = false;
+        dialog.showModal();
+        input.focus();
+      }
+ 
+      document.getElementById("open-subscribe").addEventListener("click", function () { openDialog("subscribe"); });
+      document.getElementById("open-unsubscribe").addEventListener("click", function () { openDialog("unsubscribe"); });
+      document.getElementById("mail-close").addEventListener("click", function () { dialog.close(); });
+      dialog.addEventListener("click", function (event) {
+        if (event.target === dialog) { dialog.close(); }
+      });
+ 
+      form.addEventListener("submit", async function (event) {
+        event.preventDefault();
+        submit.disabled = true;
+        setStatus("Sending...", "");
+        try {
+          const response = await fetch(mode.url, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ email: input.value })
+          });
+          const data = await response.json();
+          if (response.ok) {
+            setStatus(data.message, "ok");
+          } else {
+            setStatus(
+              typeof data.detail === "string" ? data.detail : "Something went wrong. Check the address and try again.",
+              "bad"
+            );
+            submit.disabled = false;
+          }
+        } catch (error) {
+          setStatus("Could not reach the server. Try again.", "bad");
+          submit.disabled = false;
+        }
+      });
+    })();
+  </script>
+
+  <!-- ===== Ask CIRCA chat ===== -->
+  <button class="ask-toggle" id="ask-toggle" type="button" aria-expanded="false" aria-controls="ask-panel">Ask CIRCA</button>
+
+  <section class="ask-panel" id="ask-panel" aria-label="Ask CIRCA" hidden>
+    <div class="ask-head">
+      <span>Ask CIRCA</span>
+      <button class="ask-close" id="ask-close" type="button" aria-label="Close chat">&times;</button>
+    </div>
+    <div class="ask-log" id="ask-log" aria-live="polite">
+      <div class="ask-msg bot">Ask about the threats CIRCA tracks: find incidents, summarize a CVE, or get advice on responding.</div>
+    </div>
+    <div class="ask-chips" id="ask-chips">
+      <button class="ask-chip" type="button">Show the 5 newest critical incidents</button>
+      <button class="ask-chip" type="button">Summarize CVE-2026-0322</button>
+      <button class="ask-chip" type="button">How should I respond to CVE-2026-102764?</button>
+    </div>
+    <form class="ask-form" id="ask-form" autocomplete="off">
+      <input class="ask-input" id="ask-input" type="text" maxlength="300" placeholder="Type a question" aria-label="Your question">
+      <button class="ask-send" id="ask-send" type="submit">Send</button>
+    </form>
+  </section>
+
+  <script>
+    (function () {
+      const toggle = document.getElementById("ask-toggle");
+      const panel = document.getElementById("ask-panel");
+      const closeBtn = document.getElementById("ask-close");
+      const log = document.getElementById("ask-log");
+      const chips = document.getElementById("ask-chips");
+      const form = document.getElementById("ask-form");
+      const input = document.getElementById("ask-input");
+      const send = document.getElementById("ask-send");
+
+      function setOpen(open) {
+        panel.hidden = !open;
+        toggle.setAttribute("aria-expanded", String(open));
+        if (open) { input.focus(); } else { toggle.focus(); }
+      }
+      toggle.addEventListener("click", function () { setOpen(panel.hidden); });
+      closeBtn.addEventListener("click", function () { setOpen(false); });
+      document.addEventListener("keydown", function (e) {
+        if (e.key === "Escape" && !panel.hidden) { setOpen(false); }
+      });
+
+      function addMessage(text, classes) {
+        const node = document.createElement("div");
+        node.className = "ask-msg " + classes;
+        node.textContent = text;          // textContent, never innerHTML: answers contain outside text
+        log.appendChild(node);
+        log.scrollTop = log.scrollHeight;
+        return node;
+      }
+
+      async function ask(question) {
+        chips.hidden = true;
+        addMessage(question, "me");
+        const pending = addMessage("Thinking…", "bot pending");
+        send.disabled = true;
+        input.disabled = true;
+        try {
+          const res = await fetch("/ask", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ question: question })
+          });
+          let data = {};
+          try { data = await res.json(); } catch (e) { /* not JSON */ }
+          if (res.ok) {
+            pending.textContent = data.answer || "No answer came back.";
+          } else {
+            pending.textContent = (typeof data.detail === "string" && data.detail) || "Something went wrong. Please try again.";
+          }
+        } catch (e) {
+          pending.textContent = "Could not reach the server. Check your connection and try again.";
+        }
+        pending.classList.remove("pending");
+        log.scrollTop = log.scrollHeight;
+        send.disabled = false;
+        input.disabled = false;
+        input.focus();
+      }
+
+      form.addEventListener("submit", function (e) {
+        e.preventDefault();
+        const q = input.value.trim();
+        if (!q) { return; }
+        input.value = "";
+        ask(q);
+      });
+
+      chips.querySelectorAll(".ask-chip").forEach(function (btn) {
+        btn.addEventListener("click", function () { ask(btn.textContent); });
+      });
+    })();
+  </script>
+</body>
+</html>

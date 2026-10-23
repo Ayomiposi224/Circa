@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Unsubscribe | CIRCA</title>
+<style>
+  :root {
+    --bg: #000000;
+    --panel: #0a0a0a;
+    --line: #1f1f1f;
+    --text: #e8e8e8;
+    --muted: #9a9a9a;
+    --accent: #2dd4bf;
+    --error: #f87171;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 16px;
+    background: var(--bg);
+    color: var(--text);
+    font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  }
+  main {
+    width: 100%;
+    max-width: 420px;
+    padding: 32px 28px;
+    background: var(--panel);
+    border: 1px solid var(--line);
+    border-radius: 12px;
+  }
+  h1 { margin: 0 0 8px; font-size: 1.4rem; }
+  p { margin: 0 0 24px; color: var(--muted); line-height: 1.5; }
+  button {
+    width: 100%;
+    padding: 12px 16px;
+    font-size: 1rem;
+    font-weight: 600;
+    color: #000000;
+    background: var(--accent);
+    border: 0;
+    border-radius: 8px;
+    cursor: pointer;
+  }
+  button:disabled { opacity: 0.5; cursor: default; }
+  button:focus-visible { outline: 2px solid var(--text); outline-offset: 2px; }
+  #status { margin: 20px 0 0; min-height: 1.5em; }
+  #status.ok { color: var(--accent); }
+  #status.bad { color: var(--error); }
+</style>
+</head>
+<body>
+<main>
+  <h1>Unsubscribe from CIRCA</h1>
+  <p>Press the button to stop receiving CIRCA threat reports at this address. Your address will be removed from our list.</p>
+  <button id="unsub-btn" type="button">Unsubscribe</button>
+  <div id="status" role="status" aria-live="polite"></div>
+</main>
+
+<script>
+  const token = new URLSearchParams(window.location.search).get("token");
+  const button = document.getElementById("unsub-btn");
+  const status = document.getElementById("status");
+
+  function show(text, kind) {
+    status.textContent = text;
+    status.className = kind;
+  }
+
+  if (!token) {
+    button.disabled = true;
+    show("This link is missing its token. Use the link from your email.", "bad");
+  }
+
+  button.addEventListener("click", async () => {
+    button.disabled = true;
+    show("Working...", "");
+    try {
+      const response = await fetch("/unsubscribe?token=" + encodeURIComponent(token), { method: "POST" });
+      const data = await response.json();
+      if (response.ok) {
+        show(data.message, "ok");
+      } else {
+        show(typeof data.detail === "string" ? data.detail : "Invalid link", "bad");
+        button.disabled = false;
+      }
+    } catch (error) {
+      show("Could not reach the server. Try again.", "bad");
+      button.disabled = false;
+    }
+  });
+</script>
+</body>
+</html>

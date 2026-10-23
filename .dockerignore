@@ -1,0 +1,13 @@
+*
+!requirements.txt
+!api.py
+!db.py
+!mailer.py
+!signup.py
+!ratelimit.py
+!ai_assist3.py
+!phase2.py
+!report.py
+!dashboard.html
+!unsubscribe.html
+!confirm.html

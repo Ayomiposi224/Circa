@@ -1,0 +1,38 @@
+services:
+  db:
+    image: postgres:17
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: cyberwatch
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+    volumes:
+      - circa_pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d cyberwatch"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  app:
+    build: .
+    image: circa-app
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+    ports:
+      - "127.0.0.1:8000:8000"
+    environment:
+      CIRCA_DB_HOST: db
+      CIRCA_DB_PASSWORD: ${CIRCA_DB_PASSWORD}
+      CIRCA_DB_RO_PASSWORD: ${CIRCA_DB_RO_PASSWORD}
+      CIRCA_DB_UNSUB_PASSWORD: ${CIRCA_DB_UNSUB_PASSWORD}
+      CIRCA_DB_SIGNUP_PASSWORD: ${CIRCA_DB_SIGNUP_PASSWORD}
+      CIRCA_DB_LOOKUP_PASSWORD: ${CIRCA_DB_LOOKUP_PASSWORD}
+      CIRCA_MAIL_USER: ${CIRCA_MAIL_USER}
+      CIRCA_MAIL_PASSWORD: ${CIRCA_MAIL_PASSWORD}
+      CIRCA_BASE_URL: ${CIRCA_BASE_URL}
+      OPENAI_API_KEY: ${OPENAI_API_KEY}
+
+volumes:
+  circa_pgdata:
