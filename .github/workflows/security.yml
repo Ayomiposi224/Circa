@@ -37,3 +37,15 @@ jobs:
           python3 -m venv /tmp/audit
           /tmp/audit/bin/pip install pip-audit==2.10.1
           /tmp/audit/bin/pip-audit -r requirements.txt
+
+  code-scan:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Get the code
+        uses: actions/checkout@v6
+
+      - name: Scan Python code
+        run: |
+          python3 -m venv /tmp/bandit
+          /tmp/bandit/bin/pip install bandit==1.9.4
+          /tmp/bandit/bin/bandit -r . -x ./.git -b bandit-baseline.json
