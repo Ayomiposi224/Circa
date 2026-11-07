@@ -81,3 +81,39 @@ You need Docker and Docker Compose.
    ```
 
 7. Open the dashboard at http://127.0.0.1:8000
+
+
+## Security
+
+CIRCA was built with security in mind from the start. Here is what is in place.
+
+**Secrets**
+- Passwords and API keys live only in `.env`, which is excluded from Git. The repo contains `.env.example`, which lists variable names with no values.
+- Every push and pull request is scanned for leaked secrets with Gitleaks.
+
+**Database**
+- The app never connects as an admin. Five separate database users each have only the permissions their job needs, down to single columns. For example, the signup user can add an email address but cannot read other people’s email addresses.
+- The AI chat runs its queries as a read-only database user. The generated SQL must also start with `SELECT`, include a `LIMIT`, and pass a keyword blocklist before it runs. The database permissions are the real safeguard: even if a bad query got through, that user cannot change data.
+
+**Containers**
+- The app runs as a non-root user inside its container.
+- The web port is bound to `127.0.0.1` only, and the database port is not published at all.
+- A `.dockerignore` allowlist keeps files that should not be in the image out of it.
+
+**Abuse limits**
+- The AI chat is rate limited to 10 questions per 10 minutes per visitor, and 200 per day overall, to prevent abuse and protect API credit.
+
+**Automated checks (GitHub Actions)**
+Run on every push and pull request, and weekly:
+- Gitleaks scans the full Git history for secrets.
+- `pip-audit` checks dependencies for known vulnerabilities.
+- Bandit scans the Python code for risky patterns. One reviewed false positive is recorded in `bandit-baseline.json`, so any new finding fails the check.
+
+Dependabot proposes updates for Python packages, the Docker image and GitHub Actions.
+
+**Known limitations**
+- There are no automated functional tests yet; the checks above cover security only.
+- The AI query check is a simple keyword blocklist. The read-only database user is what actually prevents changes.
+- GitHub Actions are pinned by version tag, not by commit hash.
+- Docker image vulnerability scanning is not set up yet.
+- Branch protection is not enabled yet.
