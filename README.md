@@ -12,6 +12,14 @@ CIRCA is a threat-intelligence tool that automatically gathers public cybersecur
 - Has a dashboard where you can see live statistics, browse recent incidents and search them
 - Has an AI chat where you can ask questions about the collected incidents in plain English
 
+## How it works
+
+   ![CIRCA architecture: public sources feed the collector, which writes to PostgreSQL; the web app serves visitors, and the report job emails subscribers](architecture.png)
+
+   - The **collector** runs every hour, reads the public sources and saves new incidents in the database.
+   - The **report job** emails a summary to subscribers three times a day.
+   - The **web app** serves the dashboard, the signup and unsubscribe pages and the AI chat. It connects to the database as separate users, each allowed to do only its own job.
+     
 ## How to run it
 
 You need Docker and Docker Compose.
@@ -35,7 +43,7 @@ You need Docker and Docker Compose.
 
    The dashboard works without an OpenAI key and mail login, but the AI chat will report that it is unavailable and no emails will be sent.
    
-4. Start the database and wait until it is ready:
+3. Start the database and wait until it is ready:
 
    ```
    docker compose up -d db
@@ -46,23 +54,23 @@ You need Docker and Docker Compose.
    docker compose ps
    ```
 
-5. Create the database users and tables:
+4. Create the database users and tables:
 
    ```
    docker compose exec -T db psql -U postgres -d cyberwatch -v ON_ERROR_STOP=1 < roles.sql
    docker compose exec -T db psql -U postgres -d cyberwatch -v ON_ERROR_STOP=1 < schema.sql
    ```
 
-6. Set the database users' passwords from your `.env`:
+5. Set the database users' passwords from your `.env`:
 
    ```
    sh set-passwords.sh
    ```
 
-7. Start the app:
+6. Start the app:
 
    ```
    docker compose up -d --build
    ```
 
-8. Open the dashboard at http://127.0.0.1:8000
+7. Open the dashboard at http://127.0.0.1:8000
