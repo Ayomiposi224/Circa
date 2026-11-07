@@ -6,7 +6,7 @@ CIRCA is a threat-intelligence tool that automatically gathers public cybersecur
 
 ## What it does
 
-- Collects security incidents and vulnerabilities from public sources (CISA's Known Exploited Vulnerabilities list, the NVD vulnerability database and The Hacker News Feeds) every hour
+- Collects security incidents and vulnerabilities from public sources (CISA's Known Exploited Vulnerabilities list, the NVD vulnerability database and The Hacker News feed) every hour
 - Stores them in a PostgreSQL database
 - Emails a summary report to subscribers three times a day (07:00, 15:00 and 23:00)
 - Has a dashboard where you can see live statistics, browse recent incidents and search them
@@ -33,14 +33,14 @@ You need Docker and Docker Compose.
    
    For a local run, set CIRCA_BASE_URL to http://127.0.0.1:8000.
 
-   The dashboard works without an OpenAI key and mail login, but the AI chat will report that it is unavailable and no emails will be sent. Check this against your own app, because that is how I remember it behaving.
-
+   The dashboard works without an OpenAI key and mail login, but the AI chat will report that it is unavailable and no emails will be sent.
+   
 4. Start the database and wait until it is ready:
 
    ```
    docker compose up -d db
    ```
-      Check that it says `healthy`:
+   Check that it says `healthy`:
 
    ```
    docker compose ps
