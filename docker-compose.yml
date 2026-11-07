@@ -33,6 +33,9 @@ services:
       CIRCA_MAIL_PASSWORD: ${CIRCA_MAIL_PASSWORD}
       CIRCA_BASE_URL: ${CIRCA_BASE_URL}
       OPENAI_API_KEY: ${OPENAI_API_KEY}
+    dns:
+    - 1.1.1.1
+    - 8.8.8.8
 
 volumes:
   circa_pgdata:
