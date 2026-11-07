@@ -19,7 +19,14 @@ CIRCA is a threat-intelligence tool that automatically gathers public cybersecur
    - The **collector** runs every hour, reads the public sources and saves new incidents in the database.
    - The **report job** emails a summary to subscribers three times a day.
    - The **web app** serves the dashboard, the signup and unsubscribe pages and the AI chat. It connects to the database as separate users, each allowed to do only its own job.
-     
+
+## Screenshots
+
+![The CIRCA dashboard with live statistics, trend chart and the AI chat open](dashboard.png)
+
+![The AI chat explaining why a vulnerability matters to an organisation](ai-chat.png)
+
+
 ## How to run it
 
 You need Docker and Docker Compose.
