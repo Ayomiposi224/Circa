@@ -90,6 +90,7 @@ CIRCA was built with security in mind from the start. Here is what is in place.
 **Secrets**
 - Passwords and API keys live only in `.env`, which is excluded from Git. The repo contains `.env.example`, which lists variable names with no values.
 - Every push and pull request is scanned for leaked secrets with Gitleaks.
+- Secret scanning with push protection is enabled on the repository
 
 **Database**
 - The app never connects as an admin. Five separate database users each have only the permissions their job needs, down to single columns. For example, the signup user can add an email address but cannot read other people’s email addresses.
@@ -116,4 +117,3 @@ Dependabot proposes updates for Python packages, the Docker image and GitHub Act
 - The AI query check is a simple keyword blocklist. The read-only database user is what actually prevents changes.
 - GitHub Actions are pinned by version tag, not by commit hash.
 - Docker image vulnerability scanning is not set up yet.
-- Branch protection is not enabled yet.
